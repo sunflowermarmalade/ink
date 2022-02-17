@@ -1,6 +1,7 @@
 import Yoga from 'yoga-layout-prebuilt';
 import widestLine from 'widest-line';
 import indentString from 'indent-string';
+import sliceAnsi from 'slice-ansi';
 import wrapText from './wrap-text';
 import getMaxWidth from './get-max-width';
 import squashTextNodes from './squash-text-nodes';
@@ -26,6 +27,24 @@ const applyPaddingToText = (node: DOMElement, text: string): string => {
 	return text;
 };
 
+const clipText = (
+	text: string,
+	maxWidth: number | undefined,
+	maxHeight: number | undefined
+): string => {
+	let lines = text.split('\n');
+
+	if (typeof maxWidth === 'number') {
+		lines = lines.map(line => sliceAnsi(line, 0, maxWidth));
+	}
+
+	if (typeof maxHeight === 'number') {
+		lines = lines.slice(0, maxHeight);
+	}
+
+	return lines.join('\n');
+};
+
 export type OutputTransformer = (s: string) => string;
 
 // After nodes are laid out, render each to output object, which later gets rendered to terminal
@@ -35,6 +54,8 @@ const renderNodeToOutput = (
 	options: {
 		offsetX?: number;
 		offsetY?: number;
+		overflowWidth?: number;
+		overflowHeight?: number;
 		transformers?: OutputTransformer[];
 		skipStaticElements: boolean;
 	}
@@ -42,6 +63,8 @@ const renderNodeToOutput = (
 	const {
 		offsetX = 0,
 		offsetY = 0,
+		overflowWidth,
+		overflowHeight,
 		transformers = [],
 		skipStaticElements
 	} = options;
@@ -82,14 +105,37 @@ const renderNodeToOutput = (
 				}
 
 				text = applyPaddingToText(node, text);
+
+				if (
+					typeof overflowWidth === 'number' ||
+					typeof overflowHeight === 'number'
+				) {
+					text = clipText(text, overflowWidth, overflowHeight);
+				}
+
 				output.write(x, y, text, {transformers: newTransformers});
 			}
 
 			return;
 		}
 
+		let newOverflowWidth = overflowWidth;
+		let newOverflowHeight = overflowHeight;
+
 		if (node.nodeName === 'ink-box') {
 			renderBorder(x, y, node, output);
+
+			if (node.style.overflowX === 'hidden') {
+				newOverflowWidth =
+					yogaNode.getComputedWidth() -
+					yogaNode.getComputedBorder(Yoga.EDGE_RIGHT) * 2;
+			}
+
+			if (node.style.overflowY === 'hidden') {
+				newOverflowHeight =
+					yogaNode.getComputedHeight() -
+					yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM) * 2;
+			}
 		}
 
 		if (node.nodeName === 'ink-root' || node.nodeName === 'ink-box') {
@@ -97,6 +143,8 @@ const renderNodeToOutput = (
 				renderNodeToOutput(childNode as DOMElement, output, {
 					offsetX: x,
 					offsetY: y,
+					overflowWidth: newOverflowWidth,
+					overflowHeight: newOverflowHeight,
 					transformers: newTransformers,
 					skipStaticElements
 				});

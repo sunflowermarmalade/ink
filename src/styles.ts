@@ -141,6 +141,16 @@ export interface Styles {
 	 * Accepts the same values as `color` in <Text> component.
 	 */
 	readonly borderColor?: LiteralUnion<typeof ForegroundColor, string>;
+
+	/**
+	 * Behavior for an element's overflow in horizontal direction.
+	 */
+	readonly overflowX?: 'visible' | 'hidden';
+
+	/**
+	 * Behavior for an element's overflow in vertical direction.
+	 */
+	readonly overflowY?: 'visible' | 'hidden';
 }
 
 const applyPositionStyles = (node: Yoga.YogaNode, style: Styles): void => {
