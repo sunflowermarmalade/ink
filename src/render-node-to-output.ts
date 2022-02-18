@@ -118,13 +118,7 @@ const renderNodeToOutput = (
 					  yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM)
 					: undefined;
 
-				output.clip({
-					x1,
-					x2,
-					y1,
-					y2
-				});
-
+				output.clip({x1, x2, y1, y2});
 				clipped = true;
 			}
 		}
