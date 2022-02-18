@@ -17,11 +17,7 @@ interface Options {
 	height: number;
 }
 
-type Operation =
-	| WriteOperation
-	| ClipHorizontallyOperation
-	| ClipVerticallyOperation
-	| ResetClippingOperation;
+type Operation = WriteOperation | ClipOperation | UndoClipOperation;
 
 interface WriteOperation {
 	type: 'write';
@@ -31,20 +27,20 @@ interface WriteOperation {
 	transformers: OutputTransformer[];
 }
 
-interface ClipHorizontallyOperation {
-	type: 'clip-horizontally';
-	x1: number;
-	x2: number;
+interface ClipOperation {
+	type: 'clip';
+	clip: Clip;
 }
 
-interface ClipVerticallyOperation {
-	type: 'clip-vertically';
-	y1: number;
-	y2: number;
+interface Clip {
+	x1: number | undefined;
+	x2: number | undefined;
+	y1: number | undefined;
+	y2: number | undefined;
 }
 
-interface ResetClippingOperation {
-	type: 'reset-clipping';
+interface UndoClipOperation {
+	type: 'undo-clip';
 }
 
 export default class Output {
@@ -81,25 +77,16 @@ export default class Output {
 		});
 	}
 
-	clipHorizontally(x1: number, x2: number) {
+	clip(clip: Clip) {
 		this.operations.push({
-			type: 'clip-horizontally',
-			x1,
-			x2
+			type: 'clip',
+			clip
 		});
 	}
 
-	clipVertically(y1: number, y2: number) {
+	undoClip() {
 		this.operations.push({
-			type: 'clip-vertically',
-			y1,
-			y2
-		});
-	}
-
-	resetClipping() {
-		this.operations.push({
-			type: 'reset-clipping'
+			type: 'undo-clip'
 		});
 	}
 
@@ -111,27 +98,15 @@ export default class Output {
 			output.push(' '.repeat(this.width));
 		}
 
-		let clipX1: number | undefined;
-		let clipX2: number | undefined;
-		let clipY1: number | undefined;
-		let clipY2: number | undefined;
+		const clips: Clip[] = [];
 
 		for (const operation of this.operations) {
-			if (operation.type === 'clip-horizontally') {
-				clipX1 = operation.x1;
-				clipX2 = operation.x2;
+			if (operation.type === 'clip') {
+				clips.push(operation.clip);
 			}
 
-			if (operation.type === 'clip-vertically') {
-				clipY1 = operation.y1;
-				clipY2 = operation.y2;
-			}
-
-			if (operation.type === 'reset-clipping') {
-				clipX1 = undefined;
-				clipX2 = undefined;
-				clipY1 = undefined;
-				clipY2 = undefined;
+			if (operation.type === 'undo-clip') {
+				clips.pop();
 			}
 
 			if (operation.type === 'write') {
@@ -139,47 +114,57 @@ export default class Output {
 				let {x, y} = operation;
 				let lines = text.split('\n');
 
-				// If text is positioned outside of clipping area altogether,
-				// skip to the next operation to avoid unnecessary calculations
-				if (typeof clipX1 === 'number' && typeof clipX2 === 'number') {
-					const width = widestLine(text);
+				const clip = clips[clips.length - 1];
 
-					if (x + width < clipX1 || x > clipX2) {
-						continue;
+				if (clip) {
+					const clipHorizontally =
+						typeof clip?.x1 === 'number' && typeof clip?.x2 === 'number';
+
+					const clipVertically =
+						typeof clip?.y1 === 'number' && typeof clip?.y2 === 'number';
+
+					// If text is positioned outside of clipping area altogether,
+					// skip to the next operation to avoid unnecessary calculations
+					if (clipHorizontally) {
+						const width = widestLine(text);
+
+						if (x + width < clip.x1! || x > clip.x2!) {
+							continue;
+						}
 					}
-				}
 
-				if (typeof clipY1 === 'number' && typeof clipY2 === 'number') {
-					const height = lines.length;
+					if (clipVertically) {
+						const height = lines.length;
 
-					if (y + height < clipY1 || y > clipY2) {
-						continue;
+						if (y + height < clip.y1! || y > clip.y2!) {
+							continue;
+						}
 					}
-				}
 
-				if (typeof clipX1 === 'number' && typeof clipX2 === 'number') {
-					lines = lines.map(line => {
-						const from = x < clipX1! ? clipX1! - x : 0;
-						const width = stringWidth(line);
-						const to = x + width > clipX2! ? clipX2! - x : width;
+					if (clipHorizontally) {
+						lines = lines.map(line => {
+							const from = x < clip.x1! ? clip.x1! - x : 0;
+							const width = stringWidth(line);
+							const to = x + width > clip.x2! ? clip.x2! - x : width;
 
-						return sliceAnsi(line, from, to);
-					});
+							return sliceAnsi(line, from, to);
+						});
 
-					if (x < clipX1) {
-						x = clipX1;
+						if (x < clip.x1!) {
+							x = clip.x1!;
+						}
 					}
-				}
 
-				if (typeof clipY1 === 'number' && typeof clipY2 === 'number') {
-					const from = y < clipY1 ? clipY1 - y : 0;
-					const height = lines.length;
-					const to = y + height > clipY2 ? clipY2 - y : height;
+					if (clipVertically) {
+						const from = y < clip.y1! ? clip.y1! - y : 0;
+						const height = lines.length;
+						const to = y + height > clip.y2! ? clip.y2! - y : height;
 
-					lines = lines.slice(from, to);
+						lines = lines.slice(from, to);
 
-					if (y < clipY1) {
-						y = clipY1;
+						if (y < clip.y1!) {
+							y = clip.y1!;
+						}
 					}
 				}
 

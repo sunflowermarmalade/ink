@@ -94,24 +94,28 @@ const renderNodeToOutput = (
 		if (node.nodeName === 'ink-box') {
 			renderBorder(x, y, node, output);
 
-			if (node.style.overflowX === 'hidden') {
-				output.clipHorizontally(
-					x + yogaNode.getComputedBorder(Yoga.EDGE_LEFT),
-					x +
-						yogaNode.getComputedWidth() -
-						yogaNode.getComputedBorder(Yoga.EDGE_RIGHT)
-				);
+			const clipHorizontally = node.style.overflowX === 'hidden';
+			const clipVertically = node.style.overflowY === 'hidden';
 
-				clipped = true;
-			}
-
-			if (node.style.overflowY === 'hidden') {
-				output.clipVertically(
-					y + yogaNode.getComputedBorder(Yoga.EDGE_TOP),
-					y +
-						yogaNode.getComputedHeight() -
-						yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM)
-				);
+			if (clipHorizontally || clipVertically) {
+				output.clip({
+					x1: clipHorizontally
+						? x + yogaNode.getComputedBorder(Yoga.EDGE_LEFT)
+						: undefined,
+					x2: clipHorizontally
+						? x +
+						  yogaNode.getComputedWidth() -
+						  yogaNode.getComputedBorder(Yoga.EDGE_RIGHT)
+						: undefined,
+					y1: clipVertically
+						? y + yogaNode.getComputedBorder(Yoga.EDGE_TOP)
+						: undefined,
+					y2: clipVertically
+						? y +
+						  yogaNode.getComputedHeight() -
+						  yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM)
+						: undefined
+				});
 
 				clipped = true;
 			}
@@ -128,7 +132,7 @@ const renderNodeToOutput = (
 			}
 
 			if (clipped) {
-				output.resetClipping();
+				output.undoClip();
 			}
 		}
 	}

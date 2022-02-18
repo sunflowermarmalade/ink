@@ -444,3 +444,27 @@ test('overflow - box intersecting with bottom right edge of container', t => {
 
 	t.is(output, '\n\n  AA\n  BB');
 });
+
+test('nested overflow', t => {
+	const output = renderToString(
+		<Box paddingBottom={1}>
+			<Box width={4} height={4} overflow="hidden" flexDirection="column">
+				<Box width={2} height={2} overflow="hidden">
+					<Box width={4} height={4} flexShrink={0}>
+						<Text>
+							AAAA{'\n'}BBBB{'\n'}CCCC{'\n'}DDDD
+						</Text>
+					</Box>
+				</Box>
+
+				<Box width={4} height={3}>
+					<Text>
+						XXXX{'\n'}YYYY{'\n'}ZZZZ
+					</Text>
+				</Box>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, 'AA\nBB\nXXXX\nYYYY\n');
+});
