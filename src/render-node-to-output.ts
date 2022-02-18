@@ -98,23 +98,31 @@ const renderNodeToOutput = (
 			const clipVertically = node.style.overflowY === 'hidden';
 
 			if (clipHorizontally || clipVertically) {
+				const x1 = clipHorizontally
+					? x + yogaNode.getComputedBorder(Yoga.EDGE_LEFT)
+					: undefined;
+
+				const x2 = clipHorizontally
+					? x +
+					  yogaNode.getComputedWidth() -
+					  yogaNode.getComputedBorder(Yoga.EDGE_RIGHT)
+					: undefined;
+
+				const y1 = clipVertically
+					? y + yogaNode.getComputedBorder(Yoga.EDGE_TOP)
+					: undefined;
+
+				const y2 = clipVertically
+					? y +
+					  yogaNode.getComputedHeight() -
+					  yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM)
+					: undefined;
+
 				output.clip({
-					x1: clipHorizontally
-						? x + yogaNode.getComputedBorder(Yoga.EDGE_LEFT)
-						: undefined,
-					x2: clipHorizontally
-						? x +
-						  yogaNode.getComputedWidth() -
-						  yogaNode.getComputedBorder(Yoga.EDGE_RIGHT)
-						: undefined,
-					y1: clipVertically
-						? y + yogaNode.getComputedBorder(Yoga.EDGE_TOP)
-						: undefined,
-					y2: clipVertically
-						? y +
-						  yogaNode.getComputedHeight() -
-						  yogaNode.getComputedBorder(Yoga.EDGE_BOTTOM)
-						: undefined
+					x1,
+					x2,
+					y1,
+					y2
 				});
 
 				clipped = true;
@@ -132,7 +140,7 @@ const renderNodeToOutput = (
 			}
 
 			if (clipped) {
-				output.undoClip();
+				output.unclip();
 			}
 		}
 	}

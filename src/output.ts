@@ -17,7 +17,7 @@ interface Options {
 	height: number;
 }
 
-type Operation = WriteOperation | ClipOperation | UndoClipOperation;
+type Operation = WriteOperation | ClipOperation | UnclipOperation;
 
 interface WriteOperation {
 	type: 'write';
@@ -39,8 +39,8 @@ interface Clip {
 	y2: number | undefined;
 }
 
-interface UndoClipOperation {
-	type: 'undo-clip';
+interface UnclipOperation {
+	type: 'unclip';
 }
 
 export default class Output {
@@ -84,9 +84,9 @@ export default class Output {
 		});
 	}
 
-	undoClip() {
+	unclip() {
 		this.operations.push({
-			type: 'undo-clip'
+			type: 'unclip'
 		});
 	}
 
@@ -105,7 +105,7 @@ export default class Output {
 				clips.push(operation.clip);
 			}
 
-			if (operation.type === 'undo-clip') {
+			if (operation.type === 'unclip') {
 				clips.pop();
 			}
 
