@@ -326,3 +326,121 @@ test('overflowY - box intersecting with bottom edge of container with border', t
 
 	t.is(output, box('Hello'));
 });
+
+test('overflow - single text node', t => {
+	const output = renderToString(
+		<Box paddingBottom={1}>
+			<Box width={6} height={1} overflow="hidden">
+				<Box width={12} height={2} flexShrink={0}>
+					<Text>Hello{'\n'}World</Text>
+				</Box>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, 'Hello\n');
+});
+
+test('overflow - single text node inside container with border', t => {
+	const output = renderToString(
+		<Box paddingBottom={1}>
+			<Box width={8} height={3} overflow="hidden" borderStyle="round">
+				<Box width={12} height={2} flexShrink={0}>
+					<Text>Hello{'\n'}World</Text>
+				</Box>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, `${box('Hello ')}\n`);
+});
+
+test('overflow - multiple boxes', t => {
+	const output = renderToString(
+		<Box paddingBottom={1}>
+			<Box width={4} height={1} overflow="hidden">
+				<Box width={2} height={2} flexShrink={0}>
+					<Text>TL{'\n'}BL</Text>
+				</Box>
+				<Box width={2} height={2} flexShrink={0}>
+					<Text>TR{'\n'}BR</Text>
+				</Box>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, 'TLTR\n');
+});
+
+test('overflow - multiple boxes inside container with border', t => {
+	const output = renderToString(
+		<Box paddingBottom={1}>
+			<Box width={6} height={3} overflow="hidden" borderStyle="round">
+				<Box width={2} height={2} flexShrink={0}>
+					<Text>TL{'\n'}BL</Text>
+				</Box>
+				<Box width={2} height={2} flexShrink={0}>
+					<Text>TR{'\n'}BR</Text>
+				</Box>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, `${box('TLTR')}\n`);
+});
+
+test('overflow - box intersecting with top left edge of container', t => {
+	const output = renderToString(
+		<Box width={4} height={4} overflow="hidden">
+			<Box marginTop={-2} marginLeft={-2} width={4} height={4} flexShrink={0}>
+				<Text>
+					AAAA{'\n'}BBBB{'\n'}CCCC{'\n'}DDDD
+				</Text>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, 'CC\nDD\n\n');
+});
+
+test('overflow - box intersecting with top right edge of container', t => {
+	const output = renderToString(
+		<Box width={4} height={4} overflow="hidden">
+			<Box marginTop={-2} marginLeft={2} width={4} height={4} flexShrink={0}>
+				<Text>
+					AAAA{'\n'}BBBB{'\n'}CCCC{'\n'}DDDD
+				</Text>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, '  CC\n  DD\n\n');
+});
+
+test('overflow - box intersecting with bottom left edge of container', t => {
+	const output = renderToString(
+		<Box width={4} height={4} overflow="hidden">
+			<Box marginTop={2} marginLeft={-2} width={4} height={4} flexShrink={0}>
+				<Text>
+					AAAA{'\n'}BBBB{'\n'}CCCC{'\n'}DDDD
+				</Text>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, '\n\nAA\nBB');
+});
+
+test('overflow - box intersecting with bottom right edge of container', t => {
+	const output = renderToString(
+		<Box width={4} height={4} overflow="hidden">
+			<Box marginTop={2} marginLeft={2} width={4} height={4} flexShrink={0}>
+				<Text>
+					AAAA{'\n'}BBBB{'\n'}CCCC{'\n'}DDDD
+				</Text>
+			</Box>
+		</Box>
+	);
+
+	t.is(output, '\n\n  AA\n  BB');
+});
